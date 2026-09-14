@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Generador d’etiquetes Google Classroom</title>
+  <style>
+    :root{--brand:#53b8ac;--ink:#222;}
+    body{font-family:'Segoe UI',Roboto,Ubuntu,Cantarell,'Helvetica Neue',Arial,sans-serif;
+      margin:0;color:var(--ink);background:#f6f7f8;font-size:16px;line-height:1.4;}
+    header{padding:18px 16px;border-bottom:1px solid #e6e7e9;background:white;position:sticky;top:0;z-index:5;}
+    h1{margin:0 0 6px;font-size:20px}
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    textarea{width:100%;min-height:180px;font-family:ui-monospace,Menlo,Monaco,Consolas,'Courier New',monospace;
+      border:1px solid #d8dade;border-radius:10px;padding:14px;box-sizing:border-box;background:white;font-size:15px;}
+    .wrap{max-width:1000px;margin:20px auto;padding:0 16px}
+    .btn{border:1px solid #d8dade;background:white;padding:12px 18px;border-radius:10px;cursor:pointer;font-size:15px}
+    .btn.primary{background:var(--brand);color:white;border-color:var(--brand)}
+    .hint{font-size:13px;color:#555}
+    #countMsg{font-size:15px;font-weight:600;color:var(--brand);text-align:center;margin-top:10px;}
+    .labels{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px auto}
+    .card{background:white;border:1px solid #cfd3d9;border-radius:10px;padding:8px 12px;
+      display:flex;flex-direction:column;justify-content:center;max-width:95mm;min-height:90px;margin:auto;}
+    .card h3{text-align:center;margin:0 0 6px;font-size:14px;font-weight:700;}
+    .info-row{display:flex;justify-content:space-between;align-items:center;margin:0 0 3px 0;}
+    .student-name{font-weight:700;font-size:16px;}
+    .logo{width:55px;height:auto;margin-left:8px;flex-shrink:0;}
+    .field{font-size:13px;margin:1px 0;}
+    .label{font-weight:700}
+    footer{text-align:center;padding:20px 10px;font-size:13px;color:#777;border-top:1px solid #e5e5e5;margin-top:30px;}
+    @media(max-width:700px){.labels{grid-template-columns:1fr}.card{max-width:100%;}}
+    @media print{@page{size:A4;margin:10mm}body{background:white;font-size:13px}
+      header,footer,.wrap.input,#countMsg{display:none!important}
+      .labels{display:grid;grid-template-columns:repeat(2,100mm);justify-content:center;gap:0;}
+      .card{border:1px solid #000;border-radius:0;margin:0;break-inside:avoid;page-break-inside:avoid;
+        width:95mm;min-height:45mm;padding:6px 8px;}
+      .card h3{font-size:12px;margin-bottom:4px}
+      .student-name{font-size:14px;margin-bottom:2px}
+      .field{font-size:12px;margin:1px 0}
+      .logo{width:50px}}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Generador d’etiquetes (dues per fila)</h1>
+    <div class="toolbar">
+      <button class="btn primary" id="generateBtn">Genera etiquetes</button>
+      <button class="btn" id="printBtn">Imprimeix / Desa en PDF</button>
+      <span class="hint">Enganxa les dades (6 columnes) i clica “Genera etiquetes”. Pots desar en PDF des del diàleg d’impressió.</span>
+    </div>
+  </header>
+  <div class="wrap input">
+    <p class="hint">
+      Format requerit: <code>Nom &nbsp; Cognom1 &nbsp; Cognom2 &nbsp; Usuari &nbsp; Contrasenya &nbsp; Correu</code><br>
+      (separat per tabuladors o diversos espais)
+    </p>
+    <textarea id="pasteArea" placeholder="Enganxa aquí les files copiades d’Excel o Google Sheets. Una línia per alumne."></textarea>
+  </div>
+  <div class="wrap">
+    <div id="countMsg"></div>
+    <div id="labels" class="labels" aria-live="polite"></div>
+  </div>
+  <footer>© Generador d'etiquetes d'identificador digital — Escola Eugeni d'Ors (Valls)</footer>
+  <template id="cardTpl">
+    <div class="card">
+      <h3>Google Classroom — <a href="https://classroom.google.com" target="_blank" rel="noopener">classroom.google.com</a></h3>
+      <div class="info-row"><div class="student-name"></div><img class="logo" src="logo.png" alt="Logo centre"></div>
+      <div class="field"><span class="label">Usuari:</span> <span class="val user-val"></span></div>
+      <div class="field"><span class="label">Contrasenya:</span> <span class="val pass-val"></span></div>
+    </div>
+  </template>
+  <script>
+    const $=(q,el=document)=>el.querySelector(q);
+    const pasteArea=$('#pasteArea');const labels=$('#labels');const tpl=$('#cardTpl');const msg=$('#countMsg');
+    function parseLines(raw){
+      return raw.split(/\r?\n/).map(l=>l.trim()).filter(l=>l.length>0).map(line=>{
+        const parts=line.split(/\t+| {2,}/).map(s=>s.trim());
+        return parts;
+      });
+    }
+    function buildCards(rows){
+      labels.innerHTML='';let count=0;
+      rows.forEach(parts=>{
+        while(parts.length<6) parts.push('');
+        const [nom,c1,c2,user,pass,mail]=parts;
+        const nomComplet=[nom,c1,c2].filter(Boolean).join(' ');
+        const node=document.importNode(tpl.content,true);
+        node.querySelector('.user-val').textContent=mail||user||'';
+        node.querySelector('.pass-val').textContent=pass||'';
+        node.querySelector('.student-name').textContent=nomComplet||'(Sense nom)';
+        labels.appendChild(node);count++;
+      });
+      msg.textContent=count?`S’han generat ${count} etiquetes.`:'No s’ha generat cap etiqueta.';
+    }
+    document.getElementById('generateBtn').addEventListener('click',()=>{
+      const rows=parseLines(pasteArea.value);buildCards(rows);
+      window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+    });
+    document.getElementById('printBtn').addEventListener('click',()=>{
+      if(!labels.children.length){const rows=parseLines(pasteArea.value);buildCards(rows);}
+      window.print();
+    });
+  </script>
+</body>
+</html>
