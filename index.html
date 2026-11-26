@@ -46,12 +46,12 @@
     <div class="toolbar">
       <button class="btn primary" id="generateBtn">Genera etiquetes</button>
       <button class="btn" id="printBtn">Imprimeix / Desa en PDF</button>
-      <span class="hint">Enganxa les dades (6 columnes) i clica “Genera etiquetes”. Pots desar en PDF des del diàleg d’impressió.</span>
+      <span class="hint">Enganxa les dades i clica “Genera etiquetes”. Pots desar en PDF des del diàleg d’impressió.</span>
     </div>
   </header>
   <div class="wrap input">
     <p class="hint">
-      Format requerit: <code>Nom &nbsp; Cognom1 &nbsp; Cognom2 &nbsp; Usuari &nbsp; Contrasenya &nbsp; Correu</code><br>
+      Format requerit: <code>Nom &nbsp; Cognom1 &nbsp; Cognom2 &nbsp; Contrasenya &nbsp; Correu</code><br>
       (separat per tabuladors o diversos espais)
     </p>
     <textarea id="pasteArea" placeholder="Enganxa aquí les files copiades d’Excel o Google Sheets. Una línia per alumne."></textarea>
@@ -82,7 +82,7 @@
       labels.innerHTML='';let count=0;
       rows.forEach(parts=>{
         while(parts.length<6) parts.push('');
-        const [nom,c1,c2,user,pass,mail]=parts;
+        const [nom,c1,c2,pass,mail,user]=parts;
         const nomComplet=[nom,c1,c2].filter(Boolean).join(' ');
         const node=document.importNode(tpl.content,true);
         node.querySelector('.user-val').textContent=mail||user||'';
