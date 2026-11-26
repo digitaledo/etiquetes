@@ -52,7 +52,7 @@
   <div class="wrap input">
     <p class="hint">
       Format requerit: <code>Nom &nbsp; Cognom1 &nbsp; Cognom2 &nbsp; Contrasenya &nbsp; Correu</code><br>
-      (separat per tabuladors o diversos espais)
+      (copiat directament d'Excel o Google Sheets)
     </p>
     <textarea id="pasteArea" placeholder="Enganxa aquí les files copiades d’Excel o Google Sheets. Una línia per alumne."></textarea>
   </div>
@@ -72,17 +72,29 @@
   <script>
     const $=(q,el=document)=>el.querySelector(q);
     const pasteArea=$('#pasteArea');const labels=$('#labels');const tpl=$('#cardTpl');const msg=$('#countMsg');
+    
     function parseLines(raw){
-      return raw.split(/\r?\n/).map(l=>l.trim()).filter(l=>l.length>0).map(line=>{
-        const parts=line.split(/\t+| {2,}/).map(s=>s.trim());
-        return parts;
-      });
+      return raw.split(/\r?\n/)
+        .filter(l=>l.trim().length>0)
+        .map(line=>{
+          // Separem per cada tabulador individual (per respectar cel·les buides) o per 2+ espais si no hi ha tabuladors
+          const sep = line.includes('\t') ? /\t/ : / {2,}/;
+          return line.split(sep).map(s=>s.trim());
+        });
     }
+
     function buildCards(rows){
       labels.innerHTML='';let count=0;
+      const valorsBuits = ['-', '.', 'null', 'none', 'cap', 'n/a'];
+
       rows.forEach(parts=>{
         while(parts.length<6) parts.push('');
-        const [nom,c1,c2,pass,mail,user]=parts;
+        let [nom,c1,c2,pass,mail,user]=parts;
+
+        if (!c2 || valorsBuits.includes(c2.toLowerCase()) || c2.toLowerCase() === c1.toLowerCase()) {
+          c2 = '';
+        }
+
         const nomComplet=[nom,c1,c2].filter(Boolean).join(' ');
         const node=document.importNode(tpl.content,true);
         node.querySelector('.user-val').textContent=mail||user||'';
@@ -92,6 +104,7 @@
       });
       msg.textContent=count?`S’han generat ${count} etiquetes.`:'No s’ha generat cap etiqueta.';
     }
+
     document.getElementById('generateBtn').addEventListener('click',()=>{
       const rows=parseLines(pasteArea.value);buildCards(rows);
       window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
